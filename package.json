@@ -1,0 +1,140 @@
+{
+  "name": "no-px-in-css",
+  "displayName": "No px in css",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.104.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "publisher": "Beliwin",
+  "repository": {
+    "url": "https://github.com/Beliwin/no-px-in-css.git"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "no-px-in-css.scanFiles",
+        "title": "Scan for px values",
+        "icon": "$(search)"
+      },
+      {
+        "command": "no-px-in-css.convertToRem",
+        "title": "Convert to rem",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "no-px-in-css.goToLocation",
+        "title": "Go to location",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "no-px-in-css.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "pxScanner",
+          "title": "Px Scanner",
+          "icon": "resources/px-scanner-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "pxScanner": [
+        {
+          "id": "pxValuesView",
+          "name": "Px Values",
+          "when": "workspaceFolderCount > 0"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "no-px-in-css.refresh",
+          "when": "view == pxValuesView",
+          "group": "navigation"
+        },
+        {
+          "command": "no-px-in-css.scanFiles",
+          "when": "view == pxValuesView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "no-px-in-css.goToLocation",
+          "when": "view == pxValuesView && viewItem == pxValue",
+          "group": "inline@1"
+        },
+        {
+          "command": "no-px-in-css.convertToRem",
+          "when": "view == pxValuesView && viewItem == pxValue",
+          "group": "inline@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "No Px in CSS",
+      "properties": {
+        "noPxInCss.fileExtensions": {
+          "type": "array",
+          "default": [
+            "css",
+            "scss",
+            "sass",
+            "less",
+            "stylus"
+          ],
+          "description": "File extensions to scan for px values"
+        },
+        "noPxInCss.ignore1px": {
+          "type": "boolean",
+          "default": true,
+          "description": "Ignore 1px values when scanning"
+        },
+        "noPxInCss.ignorePatterns": {
+          "type": "array",
+          "default": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/build/**",
+            "**/.git/**",
+            "**/coverage/**",
+            "**/.output/**"
+          ],
+          "description": "Glob patterns for files and folders to ignore during scanning"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.104.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@typescript-eslint/eslint-plugin": "^8.42.0",
+    "@typescript-eslint/parser": "^8.42.0",
+    "eslint": "^9.34.0",
+    "typescript": "^5.9.2",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}

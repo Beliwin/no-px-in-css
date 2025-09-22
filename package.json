@@ -1,13 +1,30 @@
 {
   "name": "no-px-in-css",
-  "displayName": "No px in css",
-  "description": "",
-  "version": "0.0.2",
+  "displayName": "No Px in CSS",
+  "description": "Identify, analyze and automatically convert px values to rem units in CSS, SCSS, SASS, LESS, Vue and other files with real-time diagnostics and quick fixes.",
+  "keywords": [
+    "css",
+    "scss",
+    "sass",
+    "less",
+    "stylus",
+    "vue",
+    "px",
+    "rem",
+    "convert",
+    "responsive",
+    "accessibility",
+    "units",
+    "formatter",
+    "linter"
+  ],
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.104.0"
   },
   "categories": [
-    "Other"
+    "Formatters",
+    "Linters"
   ],
   "activationEvents": [
     "onStartupFinished"

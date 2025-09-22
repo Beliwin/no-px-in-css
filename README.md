@@ -3,52 +3,88 @@
 [![Version](https://img.shields.io/badge/version-0.0.1-blue.svg)](https://marketplace.visualstudio.com/)
 [![VS Code](https://img.shields.io/badge/VS%20Code-1.104.0+-green.svg)](https://code.visualstudio.com/)
 
-Une extension VS Code complète qui vous aide à identifier, analyser et convertir automatiquement les valeurs en pixels (px) vers des unités rem dans vos fichiers CSS, SCSS, SASS, LESS, Vue et autres.
+A comprehensive VS Code extension that helps you identify, analyze, and automatically convert pixel (px) values to rem units in your CSS, SCSS, SASS, LESS, Vue, and other files.
 
-## 🎯 Fonctionnalités
+## 🎯 Features
 
-### 🔍 **Détection et analyse**
-- **Scan automatique** : Détecte toutes les valeurs px dans votre workspace
-- **Vue organisée** : Affiche les résultats par dossiers et fichiers avec compteurs
-- **Filtrage intelligent** : Ignore les dossiers de build, node_modules, etc.
-- **Support multi-formats** : CSS, SCSS, SASS, LESS, Stylus, Vue
+### 🔍 **Detection and Analysis**
+- **Automatic Scan**: Detects all px values in your workspace
+- **Organized View**: Displays results by folders and files with counters
+- **Smart Filtering**: Ignores build folders, node_modules, etc.
+- **Multi-format Support**: CSS, SCSS, SASS, LESS, Stylus, Vue
 
-### 🚨 **Alertes en temps réel** 
-- **Diagnostics inline** : Soulignements colorés directement dans le code
-- **Quick Fixes** : Ampoules VS Code avec suggestions de conversion
-- **Niveaux de sévérité** : Error, Warning ou Information configurable
-- **Mise à jour live** : Détection en temps réel pendant la frappe
+### 🚨 **Real-time Alerts** 
+- **Inline Diagnostics**: Colored underlines directly in the code
+- **Quick Fixes**: VS Code lightbulbs with conversion suggestions
+- **Severity Levels**: Configurable Error, Warning, or Information
+- **Live Updates**: Real-time detection while typing
 
-### ⚡ **Conversion rapide**
-- **Conversion individuelle** : Clic sur bouton pour chaque valeur
-- **Conversion de fichier entier** : Menu contextuel sur fichiers
-- **Conversion automatique** : À la sauvegarde (optionnel)
-- **Actions par lot** : Depuis la palette de commandes
+### ⚡ **Fast Conversion**
+- **Individual Conversion**: Click button for each value
+- **Entire File Conversion**: Context menu on files
+- **Automatic Conversion**: On save (optional)
+- **Batch Actions**: From command palette
 
-### 🎛️ **Configuration avancée**
-- **Extensions personnalisables** : Ajoutez vos types de fichiers
-- **Patterns d'exclusion** : Ignorez certains dossiers/fichiers
-- **Seuil d'exclusion** : Ignorez les valeurs px ≤ au seuil (bordures fines, etc.)
-- **Auto-conversion** : Activable pour la sauvegarde
+### 🎛️ **Advanced Configuration**
+- **Customizable Extensions**: Add your file types
+- **Exclusion Patterns**: Ignore certain folders/files
+- **Threshold Exclusion**: Ignore px values ≤ threshold (fine borders, etc.)
+- **Auto-conversion**: Activatable on save
 
 ## 📦 Installation
 
-1. Ouvrez VS Code
-2. Allez dans l'onglet Extensions (`Ctrl+Shift+X`)
-3. Recherchez "No Px in CSS"
-4. Cliquez sur "Install"
+1. Open VS Code
+2. Go to Extensions tab (`Ctrl+Shift+X`)
+3. Search for "No Px in CSS"
+4. Click "Install"
 
-## 🚀 Utilisation
+## 🚀 Usage
 
-### 🔍 Scanner votre workspace
+### 🔍 Scanning your workspace
 
-1. Ouvrez la vue "Px Scanner" dans la barre latérale
-2. Cliquez sur l'icône de recherche pour scanner vos fichiers
-3. Les résultats s'affichent organisés par dossiers et fichiers
+1. Open the "Px Scanner" view in the sidebar
+2. Click the search icon to scan your files
+3. Results are displayed organized by folders and files
 
-### 🎯 Conversion des valeurs
+### 🎯 Converting values
 
-#### **Méthode 1 - Boutons dans la vue :**
+#### **Method 1 - Buttons in the view:**
+```
+PX SCANNER: PX VALUES
+├── 📁 src/styles
+│   ├── 📄 main.css (5)
+│   │   ├── 24px - Line 12 [📁] [🔄]    margin: 24px auto;
+│   │   ├── 16px - Line 15 [📁] [🔄]    font-size: 16px;
+```
+- **📁 Button**: Opens the file at the exact location
+- **🔄 Button**: Converts the px value to rem
+
+#### **Method 2 - Inline diagnostics:**
+```css
+.container {
+  margin: 24px auto;  /* 🟡 Underline + 💡 Lightbulb */
+  padding: 16px;      /* 🟡 Quick Fix available */
+}
+```
+- Click the **lightbulb 💡** to see options
+- **"Convert to 1.5rem"** - Quick conversion
+- **"Convert all px values to rem"** - Convert entire file
+
+#### **Method 3 - Context menu:**
+- **Right-click** on a CSS file in Explorer
+- Select **"Convert all px to rem in file"**
+
+#### **Method 4 - Command palette:**
+- **`Cmd+Shift+P`** → "No Px in CSS: Convert all px to rem in current file"
+- Confirmation with count of values to convert
+
+#### **Method 5 - Auto-conversion:**
+- Enable `autoConvertOnSave` in settings
+- Px values are automatically converted on each save
+
+## ⚙️ Configuration
+
+### Available settings
 ```
 PX SCANNER: PX VALUES
 ├── 📁 src/styles
@@ -107,20 +143,20 @@ PX SCANNER: PX VALUES
 }
 ```
 
-### Description des paramètres
+### Parameter descriptions
 
-| Paramètre | Type | Défaut | Description |
+| Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `fileExtensions` | `array` | `["css", "scss", "sass", "less", "stylus", "vue"]` | Extensions de fichiers à scanner |
-| `ignoreThreshold` | `number` | `1` | Ignorer les valeurs px inférieures ou égales à ce seuil (0 = scanner toutes les valeurs) |
-| `ignorePatterns` | `array` | `["**/node_modules/**", ...]` | Patterns glob à ignorer |
-| `enableInlineDiagnostics` | `boolean` | `true` | Afficher les alertes dans le code |
-| `diagnosticSeverity` | `string` | `"warning"` | Niveau de sévérité (`error`, `warning`, `information`) |
-| `autoConvertOnSave` | `boolean` | `false` | Conversion automatique à la sauvegarde |
+| `fileExtensions` | `array` | `["css", "scss", "sass", "less", "stylus", "vue"]` | File extensions to scan |
+| `ignoreThreshold` | `number` | `1` | Ignore px values less than or equal to this threshold (0 = scan all values) |
+| `ignorePatterns` | `array` | `["**/node_modules/**", ...]` | Glob patterns to ignore |
+| `enableInlineDiagnostics` | `boolean` | `true` | Show alerts in code |
+| `diagnosticSeverity` | `string` | `"warning"` | Severity level (`error`, `warning`, `information`) |
+| `autoConvertOnSave` | `boolean` | `false` | Automatic conversion on save |
 
-### Exemples de configuration
+### Configuration examples
 
-#### **Pour un projet Vue/Nuxt :**
+#### **For a Vue/Nuxt project:**
 ```json
 {
   "noPxInCss.fileExtensions": ["css", "scss", "vue"],
@@ -132,7 +168,7 @@ PX SCANNER: PX VALUES
 }
 ```
 
-#### **Pour un projet React/Next.js :**
+#### **For a React/Next.js project:**
 ```json
 {
   "noPxInCss.fileExtensions": ["css", "scss", "jsx", "tsx"],
@@ -141,7 +177,7 @@ PX SCANNER: PX VALUES
 }
 ```
 
-#### **Mode strict (tout convertir) :**
+#### **Strict mode (convert everything):**
 ```json
 {
   "noPxInCss.ignoreThreshold": 0,
@@ -150,7 +186,7 @@ PX SCANNER: PX VALUES
 }
 ```
 
-#### **Ignorer seulement les bordures fines (≤ 2px) :**
+#### **Ignore only fine borders (≤ 2px):**
 ```json
 {
   "noPxInCss.ignoreThreshold": 2,
@@ -158,32 +194,32 @@ PX SCANNER: PX VALUES
 }
 ```
 
-## 📋 Commandes disponibles
+## 📋 Available commands
 
-| Commande | Description | Raccourci |
+| Command | Description | Shortcut |
 |----------|-------------|-----------|
-| `no-px-in-css.scanFiles` | Scanner les fichiers pour les valeurs px | - |
-| `no-px-in-css.refresh` | Actualiser la vue | - |
-| `no-px-in-css.goToLocation` | Aller à l'emplacement d'une valeur px | - |
-| `no-px-in-css.convertToRem` | Convertir une valeur px en rem | - |
-| `no-px-in-css.convertAllInFile` | Convertir toutes les valeurs px du fichier | - |
-| `no-px-in-css.convertAllInCurrentFile` | Convertir avec confirmation | `Cmd+Shift+P` |
+| `no-px-in-css.scanFiles` | Scan files for px values | - |
+| `no-px-in-css.refresh` | Refresh view | - |
+| `no-px-in-css.goToLocation` | Go to px value location | - |
+| `no-px-in-css.convertToRem` | Convert a px value to rem | - |
+| `no-px-in-css.convertAllInFile` | Convert all px values in file | - |
+| `no-px-in-css.convertAllInCurrentFile` | Convert with confirmation | `Cmd+Shift+P` |
 
-## 🧮 Logique de conversion
+## 🧮 Conversion logic
 
-- **Base de conversion** : 16px = 1rem (standard HTML)
-- **Formule** : `rem = px / 16`
-- **Précision** : 4 décimales, zéros supprimés
-- **Seuil d'exclusion** : Configurable pour ignorer les petites valeurs
-- **Exemples** :
+- **Conversion base**: 16px = 1rem (HTML standard)
+- **Formula**: `rem = px / 16`
+- **Precision**: 4 decimals, trailing zeros removed
+- **Exclusion threshold**: Configurable to ignore small values
+- **Examples**:
   - `24px` → `1.5rem`
   - `12px` → `0.75rem`
   - `32px` → `2rem`
   - `14px` → `0.875rem`
-  - `1px` → ignoré si seuil ≥ 1 (bordures)
-  - `2px` → ignoré si seuil ≥ 2 (bordures fines)
+  - `1px` → ignored if threshold ≥ 1 (borders)
+  - `2px` → ignored if threshold ≥ 2 (fine borders)
 
-## 🎨 Types de fichiers supportés
+## 🎨 Supported file types
 
 - **CSS** (`.css`)
 - **SCSS** (`.scss`) 
@@ -191,11 +227,11 @@ PX SCANNER: PX VALUES
 - **LESS** (`.less`)
 - **Stylus** (`.stylus`)
 - **Vue** (`.vue`) - Single File Components
-- **Personnalisable** via la configuration
+- **Customizable** via configuration
 
-## 🔧 Workflow recommandé
+## 🔧 Recommended workflow
 
-### **1. Configuration initiale**
+### **1. Initial configuration**
 ```json
 {
   "noPxInCss.enableInlineDiagnostics": true,
@@ -203,80 +239,80 @@ PX SCANNER: PX VALUES
 }
 ```
 
-### **2. Développement actif**
-- Utilisez les **diagnostics inline** pour voir les suggestions
-- Convertissez au fur et à mesure avec les **Quick Fixes**
+### **2. Active development**
+- Use **inline diagnostics** to see suggestions
+- Convert progressively with **Quick Fixes**
 
-### **3. Refactoring de fichiers existants**
-- Utilisez **"Convert all px to rem in current file"** 
-- Vérifiez les résultats avant de sauvegarder
+### **3. Refactoring existing files**
+- Use **"Convert all px to rem in current file"** 
+- Check results before saving
 
-### **4. Automatisation (optionnel)**
+### **4. Automation (optional)**
 ```json
 {
   "noPxInCss.autoConvertOnSave": true
 }
 ```
 
-## 🚨 Notifications et feedback
+## 🚨 Notifications and feedback
 
-### **Auto-conversion :**
+### **Auto-conversion:**
 > ✅ "Auto-converted 5 px values to rem in styles.css"
 
-### **Conversion manuelle :**
+### **Manual conversion:**
 > ✅ "Converted 24px to 1.5rem"
 
-### **Scan terminé :**
+### **Scan completed:**
 > ℹ️ "Found 42 px values"
 
-## 🐛 Problèmes connus
+## 🐛 Known issues
 
-- Les valeurs px dans les commentaires CSS sont détectées
-- Les expressions `calc()` contenant px ne sont pas converties
-- Les valeurs px dans les chaînes de caractères JavaScript peuvent être détectées
+- Px values in CSS comments are detected
+- `calc()` expressions containing px are not converted
+- Px values in JavaScript strings may be detected
 
-## 📝 Notes de version
+## 📝 Version notes
 
-### 0.0.1 (Version actuelle)
+### 0.0.1 (Current version)
 
-#### ✨ **Nouvelles fonctionnalités**
-- ✅ Scan intelligent des valeurs px avec filtrage
-- ✅ Vue hiérarchique interactive par dossiers/fichiers  
-- ✅ Diagnostics inline avec soulignements colorés
-- ✅ Quick Fixes (ampoules) avec suggestions de conversion
-- ✅ Conversion individuelle et par lot
-- ✅ Auto-conversion à la sauvegarde (optionnel)
-- ✅ Menu contextuel pour fichiers
-- ✅ Configuration avancée et flexible
-- ✅ Support multi-formats (CSS, SCSS, Vue, etc.)
+#### ✨ **New features**
+- ✅ Smart px value scanning with filtering
+- ✅ Interactive hierarchical view by folders/files  
+- ✅ Inline diagnostics with colored underlines
+- ✅ Quick Fixes (lightbulbs) with conversion suggestions
+- ✅ Individual and batch conversion
+- ✅ Auto-conversion on save (optional)
+- ✅ Context menu for files
+- ✅ Advanced and flexible configuration
+- ✅ Multi-format support (CSS, SCSS, Vue, etc.)
 
-#### 🔧 **Améliorations techniques**
-- ✅ Gestionnaire de configuration centralisé
-- ✅ Gestion robuste des erreurs
-- ✅ Performance optimisée pour gros projets
-- ✅ Validation des types de fichiers
-- ✅ Patterns d'exclusion configurables
+#### 🔧 **Technical improvements**
+- ✅ Centralized configuration manager
+- ✅ Robust error handling
+- ✅ Optimized performance for large projects
+- ✅ File type validation
+- ✅ Configurable exclusion patterns
 
-## 🤝 Contribution
+## 🤝 Contributing
 
-Les contributions sont les bienvenues ! N'hésitez pas à :
+Contributions are welcome! Feel free to:
 
-1. **Reporter des bugs** via les Issues GitHub
-2. **Proposer des fonctionnalités** 
-3. **Soumettre des pull requests**
-4. **Améliorer la documentation**
+1. **Report bugs** via GitHub Issues
+2. **Propose features** 
+3. **Submit pull requests**
+4. **Improve documentation**
 
-## 📄 Licence
+## 📄 License
 
 [MIT License](LICENSE)
 
-## 🔗 Liens utiles
+## 🔗 Useful links
 
-- [Repository GitHub](https://github.com/Beliwin/no-px-in-css)
-- [Documentation VS Code Extensions](https://code.visualstudio.com/api)
-- [Guide CSS rem vs px](https://www.w3schools.com/css/css_units.asp)
-- [Accessibilité web et unités relatives](https://developer.mozilla.org/en-US/docs/Web/CSS/length)
+- [GitHub Repository](https://github.com/Beliwin/no-px-in-css)
+- [VS Code Extensions Documentation](https://code.visualstudio.com/api)
+- [CSS rem vs px Guide](https://www.w3schools.com/css/css_units.asp)
+- [Web accessibility and relative units](https://developer.mozilla.org/en-US/docs/Web/CSS/length)
 
 ---
 
-**Transformez votre CSS en unités accessibles et responsives !** 🎉✨
+**Transform your CSS into accessible and responsive units!** 🎉✨

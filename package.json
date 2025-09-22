@@ -2,7 +2,7 @@
   "name": "no-px-in-css",
   "displayName": "No px in css",
   "description": "",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.104.0"
   },
@@ -123,10 +123,11 @@
           ],
           "description": "File extensions to scan for px values"
         },
-        "noPxInCss.ignore1px": {
-          "type": "boolean",
-          "default": true,
-          "description": "Ignore 1px values when scanning"
+        "noPxInCss.ignoreThreshold": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0,
+          "description": "Ignore px values below or equal to this threshold (0 = scan all values)"
         },
         "noPxInCss.ignorePatterns": {
           "type": "array",

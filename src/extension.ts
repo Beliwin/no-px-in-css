@@ -24,7 +24,7 @@ class PxDiagnosticManager {
 	async updateDiagnostics(document: vscode.TextDocument): Promise<void> {
 		const enableInlineDiagnostics = ConfigManager.getEnableInlineDiagnostics();
 		const fileExtensions = ConfigManager.getFileExtensions();
-		const ignore1px = ConfigManager.getIgnore1px();
+		const ignoreThreshold = ConfigManager.getIgnoreThreshold();
 		const severityString = ConfigManager.getDiagnosticSeverity();
 
 		// Clear diagnostics if disabled or file type not supported
@@ -48,9 +48,10 @@ class PxDiagnosticManager {
 			
 			while ((match = this.PX_REGEX.exec(line)) !== null) {
 				const value = match[1];
+				const numericValue = parseFloat(value.replace('px', ''));
 				
-				// Skip 1px if configured to ignore
-				if (ignore1px && value === '1px') {
+				// Skip values below or equal to threshold
+				if (numericValue <= ignoreThreshold) {
 					continue;
 				}
 
@@ -58,7 +59,6 @@ class PxDiagnosticManager {
 				const endPos = new vscode.Position(lineIndex, match.index + value.length);
 				const range = new vscode.Range(startPos, endPos);
 
-				const numericValue = parseFloat(value.replace('px', ''));
 				const remValue = (numericValue / 16).toFixed(4).replace(/\.?0+$/, '');
 
 				const diagnostic = new vscode.Diagnostic(
@@ -168,8 +168,8 @@ class ConfigManager {
 		return this.getConfig().get<string[]>('fileExtensions', ['css', 'scss', 'sass', 'less', 'stylus', 'vue']);
 	}
 
-	static getIgnore1px(): boolean {
-		return this.getConfig().get<boolean>('ignore1px', true);
+	static getIgnoreThreshold(): number {
+		return this.getConfig().get<number>('ignoreThreshold', 1);
 	}
 
 	static getIgnorePatterns(): string[] {
@@ -344,7 +344,7 @@ class PxScanner {
 	static async scanWorkspace(): Promise<PxValue[]> {
 		const config = vscode.workspace.getConfiguration('noPxInCss');
 		const fileExtensions = config.get<string[]>('fileExtensions', ['css', 'scss', 'sass', 'less', 'stylus', 'vue']);
-		const ignore1px = config.get<boolean>('ignore1px', true);
+		const ignoreThreshold = config.get<number>('ignoreThreshold', 1);
 		const ignorePatterns = config.get<string[]>('ignorePatterns', ['**/node_modules/**', '**/dist/**', '**/build/**', '**/.git/**', '**/coverage/**']);
 
 		const pxValues: PxValue[] = [];
@@ -376,9 +376,10 @@ class PxScanner {
 					
 					while ((match = this.PX_REGEX.exec(line)) !== null) {
 						const value = match[1];
+						const numericValue = parseFloat(value.replace('px', ''));
 						
-						// Skip 1px if configured to ignore
-						if (ignore1px && value === '1px') {
+						// Skip values below or equal to threshold
+						if (numericValue <= ignoreThreshold) {
 							continue;
 						}
 
@@ -467,7 +468,7 @@ async function convertAllPxInFile(uri: vscode.Uri): Promise<void> {
 		const editor = await vscode.window.showTextDocument(document);
 		
 		const config = vscode.workspace.getConfiguration('noPxInCss');
-		const ignore1px = config.get<boolean>('ignore1px', true);
+		const ignoreThreshold = config.get<number>('ignoreThreshold', 1);
 		
 		const text = document.getText();
 		const PX_REGEX = /(\d+(?:\.\d+)?px)/g;
@@ -481,14 +482,14 @@ async function convertAllPxInFile(uri: vscode.Uri): Promise<void> {
 		
 		while ((match = PX_REGEX.exec(text)) !== null) {
 			const value = match[1];
+			const numericValue = parseFloat(value.replace('px', ''));
 			
-			// Skip 1px if configured to ignore
-			if (ignore1px && value === '1px') {
+			if (isNaN(numericValue)) {
 				continue;
 			}
 			
-			const numericValue = parseFloat(value.replace('px', ''));
-			if (isNaN(numericValue)) {
+			// Skip values below or equal to threshold
+			if (numericValue <= ignoreThreshold) {
 				continue;
 			}
 			
@@ -576,7 +577,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// Check if there are px values to convert
 		const text = document.getText();
-		const ignore1px = config.get<boolean>('ignore1px', true);
+		const ignoreThreshold = config.get<number>('ignoreThreshold', 1);
 		const PX_REGEX = /(\d+(?:\.\d+)?px)/g;
 		
 		const edits: vscode.TextEdit[] = [];
@@ -588,14 +589,14 @@ export function activate(context: vscode.ExtensionContext) {
 		
 		while ((match = PX_REGEX.exec(text)) !== null) {
 			const value = match[1];
+			const numericValue = parseFloat(value.replace('px', ''));
 			
-			// Skip 1px if configured to ignore
-			if (ignore1px && value === '1px') {
+			if (isNaN(numericValue)) {
 				continue;
 			}
 			
-			const numericValue = parseFloat(value.replace('px', ''));
-			if (isNaN(numericValue)) {
+			// Skip values below or equal to threshold
+			if (numericValue <= ignoreThreshold) {
 				continue;
 			}
 			
@@ -771,7 +772,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// Count px values first
 		const text = document.getText();
-		const ignore1px = config.get<boolean>('ignore1px', true);
+		const ignoreThreshold = config.get<number>('ignoreThreshold', 1);
 		const PX_REGEX = /(\d+(?:\.\d+)?px)/g;
 		let pxCount = 0;
 		let match;
@@ -779,7 +780,8 @@ export function activate(context: vscode.ExtensionContext) {
 		PX_REGEX.lastIndex = 0;
 		while ((match = PX_REGEX.exec(text)) !== null) {
 			const value = match[1];
-			if (ignore1px && value === '1px') {
+			const numericValue = parseFloat(value.replace('px', ''));
+			if (numericValue <= ignoreThreshold) {
 				continue;
 			}
 			pxCount++;

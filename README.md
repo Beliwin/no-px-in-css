@@ -28,7 +28,7 @@ Une extension VS Code complète qui vous aide à identifier, analyser et convert
 ### 🎛️ **Configuration avancée**
 - **Extensions personnalisables** : Ajoutez vos types de fichiers
 - **Patterns d'exclusion** : Ignorez certains dossiers/fichiers
-- **Ignore 1px** : Optionnel pour les bordures
+- **Seuil d'exclusion** : Ignorez les valeurs px ≤ au seuil (bordures fines, etc.)
 - **Auto-conversion** : Activable pour la sauvegarde
 
 ## 📦 Installation
@@ -91,7 +91,7 @@ PX SCANNER: PX VALUES
   "noPxInCss.fileExtensions": [
     "css", "scss", "sass", "less", "stylus", "vue"
   ],
-  "noPxInCss.ignore1px": true,
+  "noPxInCss.ignoreThreshold": 1,
   "noPxInCss.ignorePatterns": [
     "**/.nuxt/**",
     "**/.output/**", 
@@ -112,7 +112,7 @@ PX SCANNER: PX VALUES
 | Paramètre | Type | Défaut | Description |
 |-----------|------|---------|-------------|
 | `fileExtensions` | `array` | `["css", "scss", "sass", "less", "stylus", "vue"]` | Extensions de fichiers à scanner |
-| `ignore1px` | `boolean` | `true` | Ignorer les valeurs 1px (bordures) |
+| `ignoreThreshold` | `number` | `1` | Ignorer les valeurs px inférieures ou égales à ce seuil (0 = scanner toutes les valeurs) |
 | `ignorePatterns` | `array` | `["**/node_modules/**", ...]` | Patterns glob à ignorer |
 | `enableInlineDiagnostics` | `boolean` | `true` | Afficher les alertes dans le code |
 | `diagnosticSeverity` | `string` | `"warning"` | Niveau de sévérité (`error`, `warning`, `information`) |
@@ -144,9 +144,17 @@ PX SCANNER: PX VALUES
 #### **Mode strict (tout convertir) :**
 ```json
 {
-  "noPxInCss.ignore1px": false,
+  "noPxInCss.ignoreThreshold": 0,
   "noPxInCss.diagnosticSeverity": "error",
   "noPxInCss.autoConvertOnSave": true
+}
+```
+
+#### **Ignorer seulement les bordures fines (≤ 2px) :**
+```json
+{
+  "noPxInCss.ignoreThreshold": 2,
+  "noPxInCss.diagnosticSeverity": "warning"
 }
 ```
 
@@ -166,11 +174,14 @@ PX SCANNER: PX VALUES
 - **Base de conversion** : 16px = 1rem (standard HTML)
 - **Formule** : `rem = px / 16`
 - **Précision** : 4 décimales, zéros supprimés
+- **Seuil d'exclusion** : Configurable pour ignorer les petites valeurs
 - **Exemples** :
   - `24px` → `1.5rem`
   - `12px` → `0.75rem`
   - `32px` → `2rem`
   - `14px` → `0.875rem`
+  - `1px` → ignoré si seuil ≥ 1 (bordures)
+  - `2px` → ignoré si seuil ≥ 2 (bordures fines)
 
 ## 🎨 Types de fichiers supportés
 

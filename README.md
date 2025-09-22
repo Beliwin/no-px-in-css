@@ -1,6 +1,6 @@
 # No Px in CSS
 
-[![Version](https://img.shields.io/badge/version-0.0.1-blue.svg)](https://marketplace.visualstudio.com/)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://marketplace.visualstudio.com/)
 [![VS Code](https://img.shields.io/badge/VS%20Code-1.104.0+-green.svg)](https://code.visualstudio.com/)
 
 A comprehensive VS Code extension that helps you identify, analyze, and automatically convert pixel (px) values to rem units in your CSS, SCSS, SASS, LESS, Vue, and other files.
@@ -273,7 +273,7 @@ PX SCANNER: PX VALUES
 
 ## 📝 Version notes
 
-### 0.0.1 (Current version)
+### 1.0.0 (Current version) - September 22, 2025
 
 #### ✨ **New features**
 - ✅ Smart px value scanning with filtering
@@ -292,6 +292,8 @@ PX SCANNER: PX VALUES
 - ✅ Optimized performance for large projects
 - ✅ File type validation
 - ✅ Configurable exclusion patterns
+- ✅ Threshold-based filtering system
+- ✅ TypeScript implementation with full type safety
 
 ## 🤝 Contributing
 

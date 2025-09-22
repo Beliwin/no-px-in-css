@@ -4,6 +4,11 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Constants
+const EXTENSION_ID = 'noPxInCss';
+const DIAGNOSTIC_CODE = 'px-to-rem';
+const DEFAULT_BASE_FONT_SIZE = 16;
+
 interface PxValue {
 	value: string;
 	file: string;
@@ -15,10 +20,9 @@ interface PxValue {
 // Diagnostic manager for inline px warnings
 class PxDiagnosticManager {
 	private diagnosticCollection: vscode.DiagnosticCollection;
-	private readonly PX_REGEX = /(\d+(?:\.\d+)?px)/g;
 
 	constructor() {
-		this.diagnosticCollection = vscode.languages.createDiagnosticCollection('noPxInCss');
+		this.diagnosticCollection = vscode.languages.createDiagnosticCollection(EXTENSION_ID);
 	}
 
 	async updateDiagnostics(document: vscode.TextDocument): Promise<void> {
@@ -44,14 +48,14 @@ class PxDiagnosticManager {
 			let match;
 			
 			// Reset regex for each line
-			this.PX_REGEX.lastIndex = 0;
+			const regex = new RegExp(ConversionUtils.PX_REGEX.source, 'g');
 			
-			while ((match = this.PX_REGEX.exec(line)) !== null) {
+			while ((match = regex.exec(line)) !== null) {
 				const value = match[1];
-				const numericValue = parseFloat(value.replace('px', ''));
+				const numericValue = ConversionUtils.extractNumericValue(value);
 				
 				// Skip values below or equal to threshold
-				if (numericValue <= ignoreThreshold) {
+				if (ConversionUtils.shouldIgnore(numericValue, ignoreThreshold)) {
 					continue;
 				}
 
@@ -59,7 +63,7 @@ class PxDiagnosticManager {
 				const endPos = new vscode.Position(lineIndex, match.index + value.length);
 				const range = new vscode.Range(startPos, endPos);
 
-				const remValue = (numericValue / 16).toFixed(4).replace(/\.?0+$/, '');
+				const remValue = ConversionUtils.pxToRem(numericValue);
 
 				const diagnostic = new vscode.Diagnostic(
 					range,
@@ -67,8 +71,8 @@ class PxDiagnosticManager {
 					severity
 				);
 
-				diagnostic.code = 'px-to-rem';
-				diagnostic.source = 'noPxInCss';
+				diagnostic.code = DIAGNOSTIC_CODE;
+				diagnostic.source = EXTENSION_ID;
 				diagnostic.tags = [vscode.DiagnosticTag.Unnecessary];
 
 				diagnostics.push(diagnostic);
@@ -103,8 +107,6 @@ class PxDiagnosticManager {
 
 // Code Action Provider for px to rem conversions
 class PxToRemCodeActionProvider implements vscode.CodeActionProvider {
-	private readonly PX_REGEX = /(\d+(?:\.\d+)?px)/g;
-
 	provideCodeActions(
 		document: vscode.TextDocument,
 		range: vscode.Range | vscode.Selection,
@@ -115,7 +117,7 @@ class PxToRemCodeActionProvider implements vscode.CodeActionProvider {
 
 		// Check if there are diagnostics from our extension
 		const relevantDiagnostics = context.diagnostics.filter(
-			diagnostic => diagnostic.source === 'noPxInCss' && diagnostic.code === 'px-to-rem'
+			diagnostic => diagnostic.source === EXTENSION_ID && diagnostic.code === DIAGNOSTIC_CODE
 		);
 
 		for (const diagnostic of relevantDiagnostics) {
@@ -124,7 +126,7 @@ class PxToRemCodeActionProvider implements vscode.CodeActionProvider {
 			
 			if (pxMatch) {
 				const numericValue = parseFloat(pxMatch[1]);
-				const remValue = (numericValue / 16).toFixed(4).replace(/\.?0+$/, '');
+				const remValue = ConversionUtils.pxToRem(numericValue);
 				
 				// Quick fix action
 				const quickFix = new vscode.CodeAction(
@@ -194,12 +196,33 @@ class ConfigManager {
 	}
 }
 
-interface PxValue {
-	value: string;
-	file: string;
-	line: number;
-	column: number;
-	context: string;
+// Utility class for px/rem conversions
+class ConversionUtils {
+	static readonly PX_REGEX = /(\d+(?:\.\d+)?px)/g;
+	static readonly BASE_FONT_SIZE = DEFAULT_BASE_FONT_SIZE;
+
+	static pxToRem(pxValue: number): string {
+		if (!Number.isFinite(pxValue) || pxValue < 0) {
+			throw new Error(`Invalid px value: ${pxValue}`);
+		}
+		return (pxValue / this.BASE_FONT_SIZE).toFixed(4).replace(/\.?0+$/, '');
+	}
+
+	static shouldIgnore(pxValue: number, threshold: number): boolean {
+		return Number.isFinite(pxValue) && Number.isFinite(threshold) && pxValue <= threshold;
+	}
+
+	static extractNumericValue(pxString: string): number {
+		const value = parseFloat(pxString.replace('px', ''));
+		if (!Number.isFinite(value)) {
+			throw new Error(`Invalid px string: ${pxString}`);
+		}
+		return value;
+	}
+
+	static createRemString(pxValue: number): string {
+		return `${this.pxToRem(pxValue)}rem`;
+	}
 }
 
 // Base class for tree items

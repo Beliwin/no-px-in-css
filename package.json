@@ -64,7 +64,8 @@
         {
           "id": "pxValuesView",
           "name": "Px Values",
-          "when": "workspaceFolderCount > 0"
+          "when": "workspaceFolderCount > 0",
+          "icon": "$(list-unordered)"
         }
       ]
     },

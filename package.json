@@ -38,6 +38,16 @@
         "command": "no-px-in-css.refresh",
         "title": "Refresh",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "no-px-in-css.convertAllInFile",
+        "title": "Convert all px to rem in file",
+        "icon": "$(replace-all)"
+      },
+      {
+        "command": "no-px-in-css.convertAllInCurrentFile",
+        "title": "No Px in CSS: Convert all px to rem in current file",
+        "icon": "$(replace-all)"
       }
     ],
     "viewsContainers": {
@@ -82,6 +92,20 @@
           "when": "view == pxValuesView && viewItem == pxValue",
           "group": "inline@2"
         }
+      ],
+      "editor/context": [
+        {
+          "command": "no-px-in-css.convertAllInFile",
+          "when": "editorLangId =~ /(css|scss|sass|less|stylus|vue)/",
+          "group": "1_modification"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "no-px-in-css.convertAllInFile",
+          "when": "resourceExtname =~ /\\.(css|scss|sass|less|stylus|vue|jsx|tsx|svelte)$/",
+          "group": "1_modification"
+        }
       ]
     },
     "configuration": {
@@ -94,7 +118,8 @@
             "scss",
             "sass",
             "less",
-            "stylus"
+            "stylus",
+            "vue"
           ],
           "description": "File extensions to scan for px values"
         },
@@ -106,14 +131,35 @@
         "noPxInCss.ignorePatterns": {
           "type": "array",
           "default": [
+            "**/.nuxt/**",
+            "**/.output/**",
             "**/node_modules/**",
             "**/dist/**",
             "**/build/**",
             "**/.git/**",
-            "**/coverage/**",
-            "**/.output/**"
+            "**/coverage/**"
           ],
           "description": "Glob patterns for files and folders to ignore during scanning"
+        },
+        "noPxInCss.enableInlineDiagnostics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show px value warnings directly in the code editor"
+        },
+        "noPxInCss.diagnosticSeverity": {
+          "type": "string",
+          "default": "warning",
+          "enum": [
+            "error",
+            "warning",
+            "information"
+          ],
+          "description": "Severity level for px value diagnostics"
+        },
+        "noPxInCss.autoConvertOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically convert px values to rem when saving files"
         }
       }
     }

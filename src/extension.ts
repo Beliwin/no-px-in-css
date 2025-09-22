@@ -12,6 +12,196 @@ interface PxValue {
 	context: string;
 }
 
+// Diagnostic manager for inline px warnings
+class PxDiagnosticManager {
+	private diagnosticCollection: vscode.DiagnosticCollection;
+	private readonly PX_REGEX = /(\d+(?:\.\d+)?px)/g;
+
+	constructor() {
+		this.diagnosticCollection = vscode.languages.createDiagnosticCollection('noPxInCss');
+	}
+
+	async updateDiagnostics(document: vscode.TextDocument): Promise<void> {
+		const enableInlineDiagnostics = ConfigManager.getEnableInlineDiagnostics();
+		const fileExtensions = ConfigManager.getFileExtensions();
+		const ignore1px = ConfigManager.getIgnore1px();
+		const severityString = ConfigManager.getDiagnosticSeverity();
+
+		// Clear diagnostics if disabled or file type not supported
+		if (!enableInlineDiagnostics || !this.isSupportedFile(document, fileExtensions)) {
+			this.diagnosticCollection.delete(document.uri);
+			return;
+		}
+
+		const diagnostics: vscode.Diagnostic[] = [];
+		const text = document.getText();
+		const lines = text.split('\n');
+
+		const severity = this.getSeverityFromString(severityString);
+
+		for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+			const line = lines[lineIndex];
+			let match;
+			
+			// Reset regex for each line
+			this.PX_REGEX.lastIndex = 0;
+			
+			while ((match = this.PX_REGEX.exec(line)) !== null) {
+				const value = match[1];
+				
+				// Skip 1px if configured to ignore
+				if (ignore1px && value === '1px') {
+					continue;
+				}
+
+				const startPos = new vscode.Position(lineIndex, match.index);
+				const endPos = new vscode.Position(lineIndex, match.index + value.length);
+				const range = new vscode.Range(startPos, endPos);
+
+				const numericValue = parseFloat(value.replace('px', ''));
+				const remValue = (numericValue / 16).toFixed(4).replace(/\.?0+$/, '');
+
+				const diagnostic = new vscode.Diagnostic(
+					range,
+					`Consider using rem instead of px. Suggestion: ${remValue}rem`,
+					severity
+				);
+
+				diagnostic.code = 'px-to-rem';
+				diagnostic.source = 'noPxInCss';
+				diagnostic.tags = [vscode.DiagnosticTag.Unnecessary];
+
+				diagnostics.push(diagnostic);
+			}
+		}
+
+		this.diagnosticCollection.set(document.uri, diagnostics);
+	}
+
+	private isSupportedFile(document: vscode.TextDocument, extensions: string[]): boolean {
+		const ext = path.extname(document.fileName).slice(1).toLowerCase();
+		return extensions.includes(ext);
+	}
+
+	private getSeverityFromString(severity: string): vscode.DiagnosticSeverity {
+		switch (severity.toLowerCase()) {
+			case 'error':
+				return vscode.DiagnosticSeverity.Error;
+			case 'warning':
+				return vscode.DiagnosticSeverity.Warning;
+			case 'information':
+				return vscode.DiagnosticSeverity.Information;
+			default:
+				return vscode.DiagnosticSeverity.Warning;
+		}
+	}
+
+	dispose(): void {
+		this.diagnosticCollection.dispose();
+	}
+}
+
+// Code Action Provider for px to rem conversions
+class PxToRemCodeActionProvider implements vscode.CodeActionProvider {
+	private readonly PX_REGEX = /(\d+(?:\.\d+)?px)/g;
+
+	provideCodeActions(
+		document: vscode.TextDocument,
+		range: vscode.Range | vscode.Selection,
+		context: vscode.CodeActionContext,
+		token: vscode.CancellationToken
+	): vscode.ProviderResult<(vscode.CodeAction | vscode.Command)[]> {
+		const actions: vscode.CodeAction[] = [];
+
+		// Check if there are diagnostics from our extension
+		const relevantDiagnostics = context.diagnostics.filter(
+			diagnostic => diagnostic.source === 'noPxInCss' && diagnostic.code === 'px-to-rem'
+		);
+
+		for (const diagnostic of relevantDiagnostics) {
+			const text = document.getText(diagnostic.range);
+			const pxMatch = text.match(/(\d+(?:\.\d+)?)px/);
+			
+			if (pxMatch) {
+				const numericValue = parseFloat(pxMatch[1]);
+				const remValue = (numericValue / 16).toFixed(4).replace(/\.?0+$/, '');
+				
+				// Quick fix action
+				const quickFix = new vscode.CodeAction(
+					`Convert to ${remValue}rem`,
+					vscode.CodeActionKind.QuickFix
+				);
+				
+				quickFix.edit = new vscode.WorkspaceEdit();
+				quickFix.edit.replace(document.uri, diagnostic.range, `${remValue}rem`);
+				quickFix.diagnostics = [diagnostic];
+				
+				actions.push(quickFix);
+
+				// Convert all px in file action
+				const convertAllAction = new vscode.CodeAction(
+					'Convert all px values to rem in this file',
+					vscode.CodeActionKind.Source
+				);
+				
+				convertAllAction.command = {
+					command: 'no-px-in-css.convertAllInFile',
+					title: 'Convert all px to rem',
+					arguments: [document.uri]
+				};
+				
+				actions.push(convertAllAction);
+			}
+		}
+
+		return actions;
+	}
+}
+
+// Configuration helper
+class ConfigManager {
+	static getConfig() {
+		return vscode.workspace.getConfiguration('noPxInCss');
+	}
+
+	static getFileExtensions(): string[] {
+		return this.getConfig().get<string[]>('fileExtensions', ['css', 'scss', 'sass', 'less', 'stylus', 'vue']);
+	}
+
+	static getIgnore1px(): boolean {
+		return this.getConfig().get<boolean>('ignore1px', true);
+	}
+
+	static getIgnorePatterns(): string[] {
+		return this.getConfig().get<string[]>('ignorePatterns', ['**/node_modules/**', '**/dist/**', '**/build/**', '**/.git/**', '**/coverage/**']);
+	}
+
+	static getEnableInlineDiagnostics(): boolean {
+		return this.getConfig().get<boolean>('enableInlineDiagnostics', true);
+	}
+
+	static getDiagnosticSeverity(): string {
+		return this.getConfig().get<string>('diagnosticSeverity', 'warning');
+	}
+
+	static getAutoConvertOnSave(): boolean {
+		return this.getConfig().get<boolean>('autoConvertOnSave', false);
+	}
+
+	static isSupportedFile(filePath: string): boolean {
+		const ext = path.extname(filePath).slice(1).toLowerCase();
+		return this.getFileExtensions().includes(ext);
+	}
+}
+
+interface PxValue {
+	value: string;
+	file: string;
+	line: number;
+	column: number;
+	context: string;
+}
+
 // Base class for tree items
 abstract class BaseTreeItem extends vscode.TreeItem {
 	constructor(
@@ -271,6 +461,63 @@ async function convertToRem(pxValue: PxValue): Promise<void> {
 	}
 }
 
+async function convertAllPxInFile(uri: vscode.Uri): Promise<void> {
+	try {
+		const document = await vscode.workspace.openTextDocument(uri);
+		const editor = await vscode.window.showTextDocument(document);
+		
+		const config = vscode.workspace.getConfiguration('noPxInCss');
+		const ignore1px = config.get<boolean>('ignore1px', true);
+		
+		const text = document.getText();
+		const PX_REGEX = /(\d+(?:\.\d+)?px)/g;
+		
+		const edits: vscode.TextEdit[] = [];
+		let match;
+		let totalConverted = 0;
+		
+		// Reset regex
+		PX_REGEX.lastIndex = 0;
+		
+		while ((match = PX_REGEX.exec(text)) !== null) {
+			const value = match[1];
+			
+			// Skip 1px if configured to ignore
+			if (ignore1px && value === '1px') {
+				continue;
+			}
+			
+			const numericValue = parseFloat(value.replace('px', ''));
+			if (isNaN(numericValue)) {
+				continue;
+			}
+			
+			const remValue = (numericValue / 16).toFixed(4).replace(/\.?0+$/, '');
+			const remString = `${remValue}rem`;
+			
+			const startPos = document.positionAt(match.index);
+			const endPos = document.positionAt(match.index + value.length);
+			const range = new vscode.Range(startPos, endPos);
+			
+			edits.push(vscode.TextEdit.replace(range, remString));
+			totalConverted++;
+		}
+		
+		if (edits.length > 0) {
+			const workspaceEdit = new vscode.WorkspaceEdit();
+			workspaceEdit.set(uri, edits);
+			await vscode.workspace.applyEdit(workspaceEdit);
+			
+			vscode.window.showInformationMessage(`Converted ${totalConverted} px values to rem`);
+		} else {
+			vscode.window.showInformationMessage('No px values found to convert');
+		}
+	} catch (error) {
+		console.error('Error converting all px in file:', error);
+		vscode.window.showErrorMessage(`Error converting px values: ${error instanceof Error ? error.message : String(error)}`);
+	}
+}
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -286,6 +533,107 @@ export function activate(context: vscode.ExtensionContext) {
 	const treeView = vscode.window.createTreeView('pxValuesView', {
 		treeDataProvider: pxValuesProvider,
 		showCollapseAll: false
+	});
+
+	// Create diagnostic manager for inline warnings
+	const diagnosticManager = new PxDiagnosticManager();
+	
+	// Register code action provider for quick fixes
+	const codeActionProvider = vscode.languages.registerCodeActionsProvider(
+		['css', 'scss', 'sass', 'less', 'stylus'],
+		new PxToRemCodeActionProvider(),
+		{
+			providedCodeActionKinds: [vscode.CodeActionKind.QuickFix, vscode.CodeActionKind.Source]
+		}
+	);
+
+	// Update diagnostics when documents are opened or changed
+	const onDidOpenTextDocument = vscode.workspace.onDidOpenTextDocument((document) => {
+		diagnosticManager.updateDiagnostics(document);
+	});
+
+	const onDidChangeTextDocument = vscode.workspace.onDidChangeTextDocument((event) => {
+		diagnosticManager.updateDiagnostics(event.document);
+	});
+
+	// Auto-convert on save if enabled
+	const onWillSaveTextDocument = vscode.workspace.onWillSaveTextDocument(async (event) => {
+		const config = vscode.workspace.getConfiguration('noPxInCss');
+		const autoConvertOnSave = config.get<boolean>('autoConvertOnSave', false);
+		
+		if (!autoConvertOnSave) {
+			return;
+		}
+
+		const document = event.document;
+		const fileExtensions = config.get<string[]>('fileExtensions', ['css', 'scss', 'sass', 'less', 'stylus', 'vue']);
+		const ext = path.extname(document.fileName).slice(1).toLowerCase();
+		
+		// Only process supported file types
+		if (!fileExtensions.includes(ext)) {
+			return;
+		}
+
+		// Check if there are px values to convert
+		const text = document.getText();
+		const ignore1px = config.get<boolean>('ignore1px', true);
+		const PX_REGEX = /(\d+(?:\.\d+)?px)/g;
+		
+		const edits: vscode.TextEdit[] = [];
+		let match;
+		let convertedCount = 0;
+		
+		// Reset regex
+		PX_REGEX.lastIndex = 0;
+		
+		while ((match = PX_REGEX.exec(text)) !== null) {
+			const value = match[1];
+			
+			// Skip 1px if configured to ignore
+			if (ignore1px && value === '1px') {
+				continue;
+			}
+			
+			const numericValue = parseFloat(value.replace('px', ''));
+			if (isNaN(numericValue)) {
+				continue;
+			}
+			
+			const remValue = (numericValue / 16).toFixed(4).replace(/\.?0+$/, '');
+			const remString = `${remValue}rem`;
+			
+			const startPos = document.positionAt(match.index);
+			const endPos = document.positionAt(match.index + value.length);
+			const range = new vscode.Range(startPos, endPos);
+			
+			edits.push(vscode.TextEdit.replace(range, remString));
+			convertedCount++;
+		}
+		
+		if (convertedCount > 0) {
+			// Apply edits before save
+			event.waitUntil(
+				Promise.resolve().then(async () => {
+					const workspaceEdit = new vscode.WorkspaceEdit();
+					workspaceEdit.set(document.uri, edits);
+					await vscode.workspace.applyEdit(workspaceEdit);
+					
+					// Update diagnostics after conversion
+					setTimeout(() => {
+						diagnosticManager.updateDiagnostics(document);
+						// Refresh the tree view to reflect changes
+						PxScanner.scanWorkspace().then(pxValues => {
+							pxValuesProvider.setPxValues(pxValues);
+						});
+					}, 100);
+				})
+			);
+		}
+	});
+
+	// Update diagnostics for already open documents
+	vscode.workspace.textDocuments.forEach(document => {
+		diagnosticManager.updateDiagnostics(document);
 	});
 
 	// Register commands
@@ -366,13 +714,120 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	});
 
+	const convertAllInFileCommand = vscode.commands.registerCommand('no-px-in-css.convertAllInFile', async (uri?: vscode.Uri) => {
+		try {
+			// If no URI provided, use the currently active editor
+			let targetUri = uri;
+			if (!targetUri) {
+				const activeEditor = vscode.window.activeTextEditor;
+				if (!activeEditor) {
+					vscode.window.showErrorMessage('No file is currently open');
+					return;
+				}
+				targetUri = activeEditor.document.uri;
+			}
+
+			// Check if the file is a supported type
+			const config = vscode.workspace.getConfiguration('noPxInCss');
+			const fileExtensions = config.get<string[]>('fileExtensions', ['css', 'scss', 'sass', 'less', 'stylus', 'vue']);
+			const ext = path.extname(targetUri.fsPath).slice(1).toLowerCase();
+			
+			if (!fileExtensions.includes(ext)) {
+				vscode.window.showWarningMessage(`File type ".${ext}" is not supported. Supported types: ${fileExtensions.join(', ')}`);
+				return;
+			}
+
+			await convertAllPxInFile(targetUri);
+			
+			// Refresh the view and diagnostics after conversion
+			const pxValues = await PxScanner.scanWorkspace();
+			pxValuesProvider.setPxValues(pxValues);
+			
+			// Update diagnostics for the modified document
+			const document = await vscode.workspace.openTextDocument(targetUri);
+			diagnosticManager.updateDiagnostics(document);
+		} catch (error) {
+			console.error('Error in convertAllInFileCommand:', error);
+			vscode.window.showErrorMessage(`Error converting all px values: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	});
+
+	const convertAllInCurrentFileCommand = vscode.commands.registerCommand('no-px-in-css.convertAllInCurrentFile', async () => {
+		const activeEditor = vscode.window.activeTextEditor;
+		if (!activeEditor) {
+			vscode.window.showErrorMessage('No file is currently open');
+			return;
+		}
+
+		const document = activeEditor.document;
+		const config = vscode.workspace.getConfiguration('noPxInCss');
+		const fileExtensions = config.get<string[]>('fileExtensions', ['css', 'scss', 'sass', 'less', 'stylus', 'vue']);
+		const ext = path.extname(document.fileName).slice(1).toLowerCase();
+		
+		if (!fileExtensions.includes(ext)) {
+			vscode.window.showWarningMessage(`File type ".${ext}" is not supported. Supported types: ${fileExtensions.join(', ')}`);
+			return;
+		}
+
+		// Count px values first
+		const text = document.getText();
+		const ignore1px = config.get<boolean>('ignore1px', true);
+		const PX_REGEX = /(\d+(?:\.\d+)?px)/g;
+		let pxCount = 0;
+		let match;
+		
+		PX_REGEX.lastIndex = 0;
+		while ((match = PX_REGEX.exec(text)) !== null) {
+			const value = match[1];
+			if (ignore1px && value === '1px') {
+				continue;
+			}
+			pxCount++;
+		}
+
+		if (pxCount === 0) {
+			vscode.window.showInformationMessage('No px values found in this file');
+			return;
+		}
+
+		// Show confirmation dialog
+		const fileName = path.basename(document.fileName);
+		const response = await vscode.window.showWarningMessage(
+			`Convert ${pxCount} px value${pxCount > 1 ? 's' : ''} to rem in "${fileName}"?`,
+			{ modal: true },
+			'Convert',
+			'Cancel'
+		);
+
+		if (response === 'Convert') {
+			try {
+				await convertAllPxInFile(document.uri);
+				
+				// Refresh the view and diagnostics after conversion
+				const pxValues = await PxScanner.scanWorkspace();
+				pxValuesProvider.setPxValues(pxValues);
+				diagnosticManager.updateDiagnostics(document);
+			} catch (error) {
+				console.error('Error in convertAllInCurrentFileCommand:', error);
+				vscode.window.showErrorMessage(`Error converting px values: ${error instanceof Error ? error.message : String(error)}`);
+			}
+		}
+	});
+
 	// Register all disposables
 	context.subscriptions.push(
 		treeView,
 		scanFilesCommand,
 		refreshCommand,
 		goToLocationCommand,
-		convertToRemCommand
+		convertToRemCommand,
+		convertAllInFileCommand,
+		convertAllInCurrentFileCommand,
+		diagnosticManager,
+		codeActionProvider,
+		onDidOpenTextDocument,
+		onDidChangeTextDocument,
+		onWillSaveTextDocument
 	);
 
 	// Initial scan when extension activates

@@ -4,6 +4,16 @@ All notable changes to the "no-px-in-css" extension will be documented in this f
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.0.1] - 2025-10-09
+
+### 🎯 Added
+- **Keep-px Comment Support**: Add `keep-px` anywhere on a line to prevent conversion of ALL px values on that line
+  - Prevents values from appearing in scan results
+  - Skips inline diagnostics/warnings
+  - Excludes from bulk conversions
+  - Ignores during auto-save conversion
+  - Perfect for borders, shadows, and pixel-perfect positioning
+
 ## [1.0.0] - 2025-09-22
 
 ### 🎉 Initial Release

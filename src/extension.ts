@@ -1,13 +1,13 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 import * as path from 'path';
 
 // Constants
 const EXTENSION_ID = 'noPxInCss';
 const DIAGNOSTIC_CODE = 'px-to-rem';
 const DEFAULT_BASE_FONT_SIZE = 16;
+const KEEP_PX_COMMENT = 'keep-px';
 
 interface PxValue {
 	value: string;
@@ -15,6 +15,11 @@ interface PxValue {
 	line: number;
 	column: number;
 	context: string;
+}
+
+// Utility function to check if a line contains keep-px comment
+function shouldKeepPx(lineText: string): boolean {
+	return lineText.includes(KEEP_PX_COMMENT);
 }
 
 // Diagnostic manager for inline px warnings
@@ -45,6 +50,12 @@ class PxDiagnosticManager {
 
 		for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
 			const line = lines[lineIndex];
+			
+			// Skip lines with keep-px comment
+			if (shouldKeepPx(line)) {
+				continue;
+			}
+			
 			let match;
 			
 			// Reset regex for each line
@@ -392,6 +403,12 @@ class PxScanner {
 
 				for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
 					const line = lines[lineIndex];
+					
+					// Skip lines with keep-px comment
+					if (shouldKeepPx(line)) {
+						continue;
+					}
+					
 					let match;
 					
 					// Reset regex for each line
@@ -494,37 +511,47 @@ async function convertAllPxInFile(uri: vscode.Uri): Promise<void> {
 		const ignoreThreshold = config.get<number>('ignoreThreshold', 1);
 		
 		const text = document.getText();
+		const lines = text.split('\n');
 		const PX_REGEX = /(\d+(?:\.\d+)?px)/g;
 		
 		const edits: vscode.TextEdit[] = [];
-		let match;
 		let totalConverted = 0;
 		
-		// Reset regex
-		PX_REGEX.lastIndex = 0;
-		
-		while ((match = PX_REGEX.exec(text)) !== null) {
-			const value = match[1];
-			const numericValue = parseFloat(value.replace('px', ''));
+		for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+			const line = lines[lineIndex];
 			
-			if (isNaN(numericValue)) {
+			// Skip lines with keep-px comment
+			if (shouldKeepPx(line)) {
 				continue;
 			}
 			
-			// Skip values below or equal to threshold
-			if (numericValue <= ignoreThreshold) {
-				continue;
+			let match;
+			// Reset regex for each line
+			PX_REGEX.lastIndex = 0;
+			
+			while ((match = PX_REGEX.exec(line)) !== null) {
+				const value = match[1];
+				const numericValue = parseFloat(value.replace('px', ''));
+				
+				if (isNaN(numericValue)) {
+					continue;
+				}
+				
+				// Skip values below or equal to threshold
+				if (numericValue <= ignoreThreshold) {
+					continue;
+				}
+				
+				const remValue = (numericValue / 16).toFixed(4).replace(/\.?0+$/, '');
+				const remString = `${remValue}rem`;
+				
+				const startPos = new vscode.Position(lineIndex, match.index);
+				const endPos = new vscode.Position(lineIndex, match.index + value.length);
+				const range = new vscode.Range(startPos, endPos);
+				
+				edits.push(vscode.TextEdit.replace(range, remString));
+				totalConverted++;
 			}
-			
-			const remValue = (numericValue / 16).toFixed(4).replace(/\.?0+$/, '');
-			const remString = `${remValue}rem`;
-			
-			const startPos = document.positionAt(match.index);
-			const endPos = document.positionAt(match.index + value.length);
-			const range = new vscode.Range(startPos, endPos);
-			
-			edits.push(vscode.TextEdit.replace(range, remString));
-			totalConverted++;
 		}
 		
 		if (edits.length > 0) {
@@ -600,38 +627,48 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// Check if there are px values to convert
 		const text = document.getText();
+		const lines = text.split('\n');
 		const ignoreThreshold = config.get<number>('ignoreThreshold', 1);
 		const PX_REGEX = /(\d+(?:\.\d+)?px)/g;
 		
 		const edits: vscode.TextEdit[] = [];
-		let match;
 		let convertedCount = 0;
 		
-		// Reset regex
-		PX_REGEX.lastIndex = 0;
-		
-		while ((match = PX_REGEX.exec(text)) !== null) {
-			const value = match[1];
-			const numericValue = parseFloat(value.replace('px', ''));
+		for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+			const line = lines[lineIndex];
 			
-			if (isNaN(numericValue)) {
+			// Skip lines with keep-px comment
+			if (shouldKeepPx(line)) {
 				continue;
 			}
 			
-			// Skip values below or equal to threshold
-			if (numericValue <= ignoreThreshold) {
-				continue;
+			let match;
+			// Reset regex for each line
+			PX_REGEX.lastIndex = 0;
+			
+			while ((match = PX_REGEX.exec(line)) !== null) {
+				const value = match[1];
+				const numericValue = parseFloat(value.replace('px', ''));
+				
+				if (isNaN(numericValue)) {
+					continue;
+				}
+				
+				// Skip values below or equal to threshold
+				if (numericValue <= ignoreThreshold) {
+					continue;
+				}
+				
+				const remValue = (numericValue / 16).toFixed(4).replace(/\.?0+$/, '');
+				const remString = `${remValue}rem`;
+				
+				const startPos = new vscode.Position(lineIndex, match.index);
+				const endPos = new vscode.Position(lineIndex, match.index + value.length);
+				const range = new vscode.Range(startPos, endPos);
+				
+				edits.push(vscode.TextEdit.replace(range, remString));
+				convertedCount++;
 			}
-			
-			const remValue = (numericValue / 16).toFixed(4).replace(/\.?0+$/, '');
-			const remString = `${remValue}rem`;
-			
-			const startPos = document.positionAt(match.index);
-			const endPos = document.positionAt(match.index + value.length);
-			const range = new vscode.Range(startPos, endPos);
-			
-			edits.push(vscode.TextEdit.replace(range, remString));
-			convertedCount++;
 		}
 		
 		if (convertedCount > 0) {
@@ -795,19 +832,29 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// Count px values first
 		const text = document.getText();
+		const lines = text.split('\n');
 		const ignoreThreshold = config.get<number>('ignoreThreshold', 1);
 		const PX_REGEX = /(\d+(?:\.\d+)?px)/g;
 		let pxCount = 0;
-		let match;
 		
-		PX_REGEX.lastIndex = 0;
-		while ((match = PX_REGEX.exec(text)) !== null) {
-			const value = match[1];
-			const numericValue = parseFloat(value.replace('px', ''));
-			if (numericValue <= ignoreThreshold) {
+		for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+			const line = lines[lineIndex];
+			
+			// Skip lines with keep-px comment
+			if (shouldKeepPx(line)) {
 				continue;
 			}
-			pxCount++;
+			
+			let match;
+			PX_REGEX.lastIndex = 0;
+			while ((match = PX_REGEX.exec(line)) !== null) {
+				const value = match[1];
+				const numericValue = parseFloat(value.replace('px', ''));
+				if (numericValue <= ignoreThreshold) {
+					continue;
+				}
+				pxCount++;
+			}
 		}
 
 		if (pxCount === 0) {

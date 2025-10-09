@@ -82,6 +82,30 @@ PX SCANNER: PX VALUES
 - Enable `autoConvertOnSave` in settings
 - Px values are automatically converted on each save
 
+## 🎯 Keep px values intentionally
+
+You can prevent specific lines from being converted by adding a `keep-px` comment:
+
+```css
+.component {
+  margin: 24px;           /* This will be converted */
+  border: 1px solid;      /* keep-px - This will NOT be converted */
+  padding: 16px;          /* This will be converted */
+  box-shadow: 0 2px 4px;  /* keep-px - Shadows often look better in px */
+}
+```
+
+The `keep-px` comment can be placed anywhere on the line and will prevent **all** px values on that line from being:
+- ✅ Detected in scans
+- ✅ Shown in diagnostics
+- ✅ Converted (manual or automatic)
+
+**Use cases:**
+- Fine borders (`1px`, `2px`)
+- Box shadows
+- Specific design requirements
+- Pixel-perfect positioning
+
 ## ⚙️ Configuration
 
 ### Available settings

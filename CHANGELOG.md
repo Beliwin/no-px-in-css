@@ -4,6 +4,30 @@ All notable changes to the "no-px-in-css" extension will be documented in this f
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.1.0] - 2026-07-22
+
+### ✨ Added
+- **`baseFontSize` setting**: configure the root font size used for the conversion (default 16), for projects using e.g. `html { font-size: 62.5% }`
+- **Quick Fixes in Vue files**: the code action provider is now registered for `.vue` files as well
+- **Debounced diagnostics**: the editor analysis now waits for a 300 ms typing pause instead of running on every keystroke
+- **Lazy first scan**: the workspace scan runs when the Px Scanner view is first shown instead of at startup
+- **Click-to-navigate**: clicking a value in the tree view jumps to its location
+- **Unit tests** covering the detection and conversion logic
+
+### 🐛 Fixed
+- **Stale-scan corruption**: converting a value from the tree view now verifies the document still matches the scanned position before editing; a stale entry triggers a refresh instead of corrupting the file
+- **False positives**: px values inside comments, `url(...)` arguments and identifiers (`icon-16px`) are no longer detected or converted; `.5px` and negative values are now handled correctly
+- **Auto-convert on save**: edits are now applied through `waitUntil` as part of the save itself — the document no longer stays dirty after saving
+- **Duplicated code action**: "Convert all px values to rem in this file" was listed once per diagnostic in the lightbulb menu
+- **Explorer context menu** no longer offers unsupported file types (jsx/tsx/svelte)
+- Diagnostics no longer use the `Unnecessary` tag, which faded the code as if it were dead
+
+### 🔧 Changed
+- Codebase split into focused modules with a pure, dependency-free detection core
+- Workspace scans read files from disk instead of opening each one as a text document (much faster on large workspaces)
+- Default `fileExtensions` now lists `styl` (the actual Stylus file extension) instead of `stylus`
+- Minimum VS Code version lowered from 1.104 to 1.85
+
 ## [1.0.1] - 2025-10-09
 
 ### 🎯 Added

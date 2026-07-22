@@ -18,9 +18,9 @@
     "formatter",
     "linter"
   ],
-  "version": "1.0.1",
+  "version": "1.1.0",
   "engines": {
-    "vscode": "^1.104.0"
+    "vscode": "^1.85.0"
   },
   "categories": [
     "Formatters",
@@ -39,31 +39,37 @@
       {
         "command": "no-px-in-css.scanFiles",
         "title": "Scan for px values",
+        "category": "No Px in CSS",
         "icon": "$(search)"
       },
       {
         "command": "no-px-in-css.convertToRem",
         "title": "Convert to rem",
+        "category": "No Px in CSS",
         "icon": "$(edit)"
       },
       {
         "command": "no-px-in-css.goToLocation",
         "title": "Go to location",
+        "category": "No Px in CSS",
         "icon": "$(go-to-file)"
       },
       {
         "command": "no-px-in-css.refresh",
         "title": "Refresh",
+        "category": "No Px in CSS",
         "icon": "$(refresh)"
       },
       {
         "command": "no-px-in-css.convertAllInFile",
         "title": "Convert all px to rem in file",
+        "category": "No Px in CSS",
         "icon": "$(replace-all)"
       },
       {
         "command": "no-px-in-css.convertAllInCurrentFile",
-        "title": "No Px in CSS: Convert all px to rem in current file",
+        "title": "Convert all px to rem in current file",
+        "category": "No Px in CSS",
         "icon": "$(replace-all)"
       }
     ],
@@ -87,6 +93,16 @@
       ]
     },
     "menus": {
+      "commandPalette": [
+        {
+          "command": "no-px-in-css.goToLocation",
+          "when": "false"
+        },
+        {
+          "command": "no-px-in-css.convertToRem",
+          "when": "false"
+        }
+      ],
       "view/title": [
         {
           "command": "no-px-in-css.refresh",
@@ -121,7 +137,7 @@
       "explorer/context": [
         {
           "command": "no-px-in-css.convertAllInFile",
-          "when": "resourceExtname =~ /\\.(css|scss|sass|less|stylus|vue|jsx|tsx|svelte)$/",
+          "when": "resourceExtname =~ /\\.(css|scss|sass|less|styl|vue)$/",
           "group": "1_modification"
         }
       ]
@@ -136,10 +152,16 @@
             "scss",
             "sass",
             "less",
-            "stylus",
+            "styl",
             "vue"
           ],
           "description": "File extensions to scan for px values"
+        },
+        "noPxInCss.baseFontSize": {
+          "type": "number",
+          "default": 16,
+          "minimum": 1,
+          "description": "Root font size in px used for the px to rem conversion (16 means 16px = 1rem)"
         },
         "noPxInCss.ignoreThreshold": {
           "type": "number",
@@ -189,17 +211,17 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "npm_config_proxy= npm_config_https_proxy= vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.104.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
+    "@types/vscode": "~1.85.0",
     "@typescript-eslint/eslint-plugin": "^8.42.0",
     "@typescript-eslint/parser": "^8.42.0",
-    "eslint": "^9.34.0",
-    "typescript": "^5.9.2",
     "@vscode/test-cli": "^0.0.11",
-    "@vscode/test-electron": "^2.5.2"
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.34.0",
+    "typescript": "^5.9.2"
   }
 }
